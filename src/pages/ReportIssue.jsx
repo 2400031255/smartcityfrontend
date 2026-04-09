@@ -15,17 +15,32 @@ const CATEGORIES = [
 export default function ReportIssue() {
   const { user } = useAuth();
   const [form, setForm] = useState({ name: user?.name || '', phone: user?.phone || '', category: '', location: '', description: '' });
+  const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [refId, setRefId] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = 'Name is required';
+    if (!form.phone.trim()) e.phone = 'Phone is required';
+    else if (!/^[0-9]{10}$/.test(form.phone)) e.phone = 'Phone must be exactly 10 digits';
+    if (!form.category) e.category = 'Please select a category';
+    if (!form.location.trim()) e.location = 'Location is required';
+    if (!form.description.trim()) e.description = 'Description is required';
+    else if (form.description.trim().length < 10) e.description = 'Description must be at least 10 characters';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const card = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '20px', padding: '2rem', boxShadow: 'var(--shadow)' };
-  const inp = { width: '100%', padding: '0.75rem 1rem', border: '2px solid var(--border)', borderRadius: '12px', fontSize: '0.9rem', background: 'var(--input-bg)', color: 'var(--text-primary)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' };
+  const inp = (field) => ({ width: '100%', padding: '0.75rem 1rem', border: `2px solid ${errors[field] ? '#ef4444' : 'var(--border)'}`, borderRadius: '12px', fontSize: '0.9rem', background: 'var(--input-bg)', color: 'var(--text-primary)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' });
   const lbl = { display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.4px' };
+  const errMsg = (field) => errors[field] ? <span style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.3rem', display: 'block', fontWeight: 500 }}>{errors[field]}</span> : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.category) { toast.error('Please select a category'); return; }
+    if (!validate()) { toast.error('Please fix the errors'); return; }
     setLoading(true);
     try {
       const { data } = await API.post('/issues', form);
@@ -35,6 +50,11 @@ export default function ReportIssue() {
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to submit');
     } finally { setLoading(false); }
+  };
+
+  const handleChange = (field, value) => {
+    setForm({ ...form, [field]: value });
+    if (errors[field]) setErrors({ ...errors, [field]: '' });
   };
 
   if (submitted) return (
@@ -56,24 +76,25 @@ export default function ReportIssue() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div><label style={lbl}>Full Name</label><input style={inp} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></div>
-            <div><label style={lbl}>Phone Number</label><input style={inp} type="tel" maxLength={10} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required /></div>
+            <div><label style={lbl}>Full Name</label><input style={inp('name')} value={form.name} onChange={e => handleChange('name', e.target.value)} />{errMsg('name')}</div>
+            <div><label style={lbl}>Phone Number</label><input style={inp('phone')} type="tel" maxLength={10} value={form.phone} onChange={e => handleChange('phone', e.target.value)} />{errMsg('phone')}</div>
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
             <label style={lbl}>Issue Category</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem' }}>
               {CATEGORIES.map(c => (
-                <div key={c.value} onClick={() => setForm({ ...form, category: c.value })} style={{ padding: '1rem 0.5rem', border: `2px solid ${form.category === c.value ? 'var(--accent)' : 'var(--border)'}`, borderRadius: '14px', cursor: 'pointer', textAlign: 'center', background: form.category === c.value ? 'rgba(var(--accent-rgb),0.1)' : 'var(--bg-secondary)', transition: 'all 0.2s' }}>
+                <div key={c.value} onClick={() => handleChange('category', c.value)} style={{ padding: '1rem 0.5rem', border: `2px solid ${form.category === c.value ? 'var(--accent)' : errors.category ? '#ef4444' : 'var(--border)'}`, borderRadius: '14px', cursor: 'pointer', textAlign: 'center', background: form.category === c.value ? 'rgba(var(--accent-rgb),0.1)' : 'var(--bg-secondary)', transition: 'all 0.2s' }}>
                   <div style={{ fontSize: '1.8rem' }}>{c.icon}</div>
                   <div style={{ fontSize: '0.72rem', fontWeight: 700, color: form.category === c.value ? 'var(--accent)' : 'var(--text-secondary)' }}>{c.label}</div>
                 </div>
               ))}
             </div>
+            {errMsg('category')}
           </div>
 
-          <div style={{ marginBottom: '1rem' }}><label style={lbl}>Location</label><input style={inp} placeholder="Enter address or landmark" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} required /></div>
-          <div style={{ marginBottom: '1.5rem' }}><label style={lbl}>Description</label><textarea style={{ ...inp, height: 100, resize: 'vertical' }} placeholder="Describe the issue in detail..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} required minLength={10} /></div>
+          <div style={{ marginBottom: '1rem' }}><label style={lbl}>Location</label><input style={inp('location')} placeholder="Enter address or landmark" value={form.location} onChange={e => handleChange('location', e.target.value)} />{errMsg('location')}</div>
+          <div style={{ marginBottom: '1.5rem' }}><label style={lbl}>Description</label><textarea style={{ ...inp('description'), height: 100, resize: 'vertical' }} placeholder="Describe the issue in detail..." value={form.description} onChange={e => handleChange('description', e.target.value)} />{errMsg('description')}</div>
 
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '0.9rem', background: 'linear-gradient(135deg,var(--accent),#8b5cf6)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
             {loading ? 'Submitting...' : '📤 Submit Report'}
