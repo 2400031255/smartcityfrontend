@@ -30,3 +30,4 @@ input, textarea, select, button {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* Responsive routing styles added */
