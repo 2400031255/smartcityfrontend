@@ -36,3 +36,4 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+// JWT auth with token persistence
