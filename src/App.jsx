@@ -36,3 +36,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+// Session management with localStorage and auto-redirect
