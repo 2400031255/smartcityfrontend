@@ -304,3 +304,4 @@ export default function AdminPanel() {
     </div>
   );
 }
+// Complete CRUD via Spring Boot REST API
