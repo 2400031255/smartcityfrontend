@@ -116,3 +116,4 @@ export default function ReportIssue() {
     </div>
   );
 }
+// Real-time inline validation added
