@@ -88,3 +88,4 @@ export default function Dashboard() {
     </div>
   );
 }
+// Full API integration with response and exception handling
